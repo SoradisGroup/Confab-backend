@@ -1,0 +1,4 @@
+ICICI_BASE_URL=https://qa.phicommerce.com/pg/api/v2
+ICICI_MERCHANT_ID=T_03342
+ICICI_MERCHANT_SECRET=abc
+ICICI_RETURN_URL=https://confab360degree.com
