@@ -6,7 +6,7 @@ const config = {
   merchantId: "T_03342",
   merchantSecretKey: "abc",
   baseURL: "https://qa.phicommerce.com",
-  returnURL: "http://localhost:3000/success", // Your Next.js callback page
+  returnURL: "https://confab360degree.com/shipping/success", // Your Next.js callback page
 };
 
 // Generate secure hash using HMAC SHA256
@@ -148,12 +148,12 @@ export const HandlePaymentCallback = (req: Request, res: Response) => {
     ) {
       // Payment successful - redirect to frontend success page
       res.redirect(
-        `http://localhost:3000/payment-callback?status=success&txnId=${callbackData.txnID}&merchantTxnNo=${callbackData.merchantTxnNo}&amount=${callbackData.amount}`
+        `http://192.168.1.7:3000/payment-callback?status=success&txnId=${callbackData.txnID}&merchantTxnNo=${callbackData.merchantTxnNo}&amount=${callbackData.amount}`
       );
     } else {
       // Payment failed - redirect to frontend failure page
       res.redirect(
-        `http://localhost:3000/payment-callback?status=failed&error=${encodeURIComponent(
+        `http://192.168.1.7:3000/payment-callback?status=failed&error=${encodeURIComponent(
           callbackData.respDescription || "Payment failed"
         )}&merchantTxnNo=${callbackData.merchantTxnNo}`
       );
@@ -161,7 +161,7 @@ export const HandlePaymentCallback = (req: Request, res: Response) => {
   } catch (error) {
     console.error("Payment callback error:", error);
     res.redirect(
-      `http://localhost:3000/payment-callback?status=error&error=${encodeURIComponent(
+      `http://192.168.1.7:3000/payment-callback?status=error&error=${encodeURIComponent(
         "Internal server error"
       )}`
     );
