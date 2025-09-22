@@ -22,9 +22,8 @@ app.use("/api/payment", testRoute);
 app.use("/api/career", careerRoute);
 app.use("/api/contact", contactRoute);
 
-// app.listen(PORT, () => {
-//   console.log(`🚀 Server running on port ${PORT}`);
-// });
-
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
 
 export default app;

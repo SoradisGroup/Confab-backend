@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { sendContactEmail } from "../controllers/contactController.ts";
 
-
 const router = Router();
 
 // POST /api/career
