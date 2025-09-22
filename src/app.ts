@@ -1,7 +1,6 @@
 import express, { type Application } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
-import paymentRoute from "./routes/paymentRouter.ts";
 import testRoute from "./routes/testRotuer.ts";
 import careerRoute from "./routes/careerRoute.ts";
 import contactRoute from "./routes/contactRoute.ts";
