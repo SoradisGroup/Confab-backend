@@ -1,6 +1,7 @@
 import axios from "axios";
-import type { Request, Response } from "express";
 import crypto from "crypto";
+
+ 
 
 const BASE_URL =
   process.env.ICICI_BASE_URL || "https://uat-api.icicibank.com/orangepg";
@@ -10,11 +11,11 @@ const headers = {
   ClientId: process.env.ICICI_CLIENT_ID || "",
   ClientSecret: process.env.ICICI_CLIENT_SECRET || "",
 };
-const MERCHANT_ID = process.env.ICICI_MERCHANT_ID!;
-const MERCHANT_SECRET = process.env.ICICI_MERCHANT_SECRET!;
-const RETURN_URL = process.env.ICICI_RETURN_URL!;
+
+const RETURN_URL = process.env.ICICI_RETURN_URL;
+
 // ✅ Initiate Sale API
-export const initiateSale = async (req: Request, res: Response) => {
+export const initiateSale = async (req, res) => {
   try {
     const {
       amount,
@@ -38,20 +39,17 @@ export const initiateSale = async (req: Request, res: Response) => {
       String(now.getSeconds()).padStart(2, "0");
 
     // Secure Hash generation
-    // hashKey = addlParam1 + addlParam2 + amount + currencyCode + customerEmailID + customerMobileNo + merchantId + merchantTxnNo + payType + returnURL + transactionType + txnDate
     const hashKey = `${addlParam1}${addlParam2}${amount}356${customerEmailID}${customerMobileNo}${process.env.ICICI_MERCHANT_ID}${merchantTxnNo}0${RETURN_URL}SALE${txnDate}`;
 
-    const secureHash = crypto
-      .createHash("sha256")
-      .update(hashKey)
-      .digest("hex");
+    const secureHash = crypto.createHash("sha256").update(hashKey).digest("hex");
+
     // Construct payload dynamically
     const payload = {
-      merchantId: process.env.ICICI_MERCHANT_ID, // must be T_03342
-      merchantTxnNo: merchantTxnNo,
+      merchantId: process.env.ICICI_MERCHANT_ID,
+      merchantTxnNo,
       amount,
-      currencyCode: "356", // INR
-      payType: "0", // Card / Redirect
+      currencyCode: "356",
+      payType: "0",
       customerEmailID,
       customerMobileNo,
       transactionType: "SALE",
@@ -64,38 +62,37 @@ export const initiateSale = async (req: Request, res: Response) => {
 
     // Call ICICI UAT InitiateSale API
     const response = await axios.post(
-      `${process.env.ICICI_BASE_URL}/initiateSale`,
+      `${BASE_URL}/initiateSale`,
       payload,
       { headers: { "Content-Type": "application/json" } }
     );
 
     // Send back redirectURI & tranCtx to frontend
-    console.log(response.data);
     res.json({
       redirectURI: response.data.redirectURI,
       tranCtx: response.data.tranCtx,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error(error.response?.data || error.message);
     res.status(500).json({ error: "Payment initiation failed" });
   }
 };
 
 // ✅ Status Check API
-export const statusCheck = async (req: Request, res: Response) => {
+export const statusCheck = async (req, res) => {
   try {
     const response = await axios.post(`${BASE_URL}/statusCheck`, req.body, {
       headers,
     });
     return res.json(response.data);
-  } catch (error: any) {
-    console.error("❌ Status Check Error:", error.message);
-    return res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error("❌ Status Check Error:", err.message);
+    return res.status(500).json({ error: err.message });
   }
 };
 
 // ✅ Payment Advice API (Callback from ICICI)
-export const paymentAdvice = async (req: Request, res: Response) => {
+export const paymentAdvice = async (req, res) => {
   console.log("📩 Payment Advice Received:", req.body);
 
   // Here you should update your DB with transaction status
@@ -103,7 +100,7 @@ export const paymentAdvice = async (req: Request, res: Response) => {
 };
 
 // ✅ Settlement Advice API (Callback from ICICI)
-export const settlementAdvice = async (req: Request, res: Response) => {
+export const settlementAdvice = async (req, res) => {
   console.log("📩 Settlement Advice Received:", req.body);
 
   // Here you should update your DB with settlement details

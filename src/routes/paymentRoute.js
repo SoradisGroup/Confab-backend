@@ -1,10 +1,6 @@
 import { Router } from "express";
-import {
-  initiateSale,
-  paymentAdvice,
-  settlementAdvice,
-  statusCheck,
-} from "../controllers/paymentController.ts";
+import { initiateSale, paymentAdvice, settlementAdvice, statusCheck } from "../controllers/paymentController.js";
+
 
 const router = Router();
 
