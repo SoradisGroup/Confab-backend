@@ -1,8 +1,6 @@
 import axios from "axios";
 import crypto from "crypto";
 
- 
-
 const BASE_URL =
   process.env.ICICI_BASE_URL || "https://uat-api.icicibank.com/orangepg";
 
@@ -41,7 +39,10 @@ export const initiateSale = async (req, res) => {
     // Secure Hash generation
     const hashKey = `${addlParam1}${addlParam2}${amount}356${customerEmailID}${customerMobileNo}${process.env.ICICI_MERCHANT_ID}${merchantTxnNo}0${RETURN_URL}SALE${txnDate}`;
 
-    const secureHash = crypto.createHash("sha256").update(hashKey).digest("hex");
+    const secureHash = crypto
+      .createHash("sha256")
+      .update(hashKey)
+      .digest("hex");
 
     // Construct payload dynamically
     const payload = {
@@ -61,11 +62,9 @@ export const initiateSale = async (req, res) => {
     };
 
     // Call ICICI UAT InitiateSale API
-    const response = await axios.post(
-      `${BASE_URL}/initiateSale`,
-      payload,
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const response = await axios.post(`${BASE_URL}/initiateSale`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
 
     // Send back redirectURI & tranCtx to frontend
     res.json({
