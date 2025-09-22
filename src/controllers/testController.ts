@@ -1,12 +1,13 @@
 import type { Request, Response } from "express";
 import crypto from "crypto";
+import nodemailer from "nodemailer";
 
 // Configuration
 const config = {
   merchantId: "T_03342",
   merchantSecretKey: "abc",
   baseURL: "https://qa.phicommerce.com",
-  returnURL: "https://confab360degree.com/shipping/success", // Your Next.js callback page
+  returnURL: "https://confab360degree.com/shipping", // Your Next.js callback page
 };
 
 // Generate secure hash using HMAC SHA256
@@ -49,6 +50,9 @@ type PaymentData = {
   addlParam1: any;
   addlParam2: any;
   secureHash?: string;
+
+  cart?: any;
+  addressDetail?: any;
 };
 // Initialize payment
 export const intializePayment = async (req: Request, res: Response) => {
@@ -60,6 +64,8 @@ export const intializePayment = async (req: Request, res: Response) => {
       merchantTxnNo,
       addlParam1 = "",
       addlParam2 = "",
+      cart,
+      addressDetail,
     } = req.body;
 
     // Validate required fields
@@ -83,10 +89,14 @@ export const intializePayment = async (req: Request, res: Response) => {
       customerMobileNo: customerMobileNo,
       addlParam1: addlParam1,
       addlParam2: addlParam2,
+
     };
 
     // Generate secure hash
     paymentData.secureHash = generateSecureHash(paymentData);
+
+    paymentData.cart = cart;
+    paymentData.addressDetail = addressDetail;
 
     // Make API call to ICICI
     const response = await fetch(`${config.baseURL}/pg/api/v2/initiateSale`, {
@@ -100,6 +110,86 @@ export const intializePayment = async (req: Request, res: Response) => {
     const result = await response.json();
 
     if (result.responseCode === "R1000") {
+
+let cartItems: any[] = [];
+
+if (Array.isArray(cart)) {
+  cartItems = cart;
+} else if (cart && typeof cart === "object") {
+  cartItems = [cart]; // wrap single object into an array
+}
+
+      // Build cart HTML for email
+    const cartHTML =
+  cartItems.length > 0
+    ? `
+      <h3>Cart Details:</h3>
+      <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color:#f4f6f8;">
+          <th style="text-align:left;">Name</th>
+          <th>Duration</th>
+          <th>Price</th>
+        </tr>
+        ${cartItems
+          .map(
+            (item: any) => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.selectedDuration?.name || "-"}</td>
+              <td>${item.selectedDuration?.price || item.purchaseAtPrice || 0} INR</td>
+            </tr>
+          `
+          )
+          .join("")}
+      </table>
+    `
+    : "";
+
+      // Build address HTML for email
+      const address = addressDetail;
+      const addressHTML = address
+        ? `
+        <h3>Address Details:</h3>
+        <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+          <tr><td>Name:</td><td>${address.salutation} ${address.firstName} ${address.lastName}</td></tr>
+          <tr><td>Email:</td><td>${address.email}</td></tr>
+          <tr><td>Phone:</td><td>${address.phone}</td></tr>
+          <tr><td>Company:</td><td>${address.companyName || "-"}</td></tr>
+          <tr><td>Street:</td><td>${address.streetAddress || "-"}</td></tr>
+          <tr><td>City:</td><td>${address.city || "-"}</td></tr>
+          <tr><td>State:</td><td>${address.state || "-"}</td></tr>
+          <tr><td>Country:</td><td>${address.country || "-"}</td></tr>
+          <tr><td>Pin Code:</td><td>${address.pinCode || "-"}</td></tr>
+          <tr><td>Service:</td><td>${address.service || "-"}</td></tr>
+          <tr><td>Duration:</td><td>${address.duration || "-"}</td></tr>
+        </table>
+      `
+        : "";
+
+      // Send email after payment initiation success
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
+      });
+
+      const mailOptions = {
+        from: process.env.GMAIL_USER,
+        to: process.env.GMAIL_USER,
+        replyTo: customerEmailID,
+        subject: `Payment Success: ${merchantTxnNo}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 20px;">
+            <h2>Payment Successful</h2>
+            <p>Transaction No: ${merchantTxnNo}</p>
+            <p>Amount: ${paymentData.amount} INR</p>
+            ${cartHTML}
+            ${addressHTML}
+          </div>
+        `,
+      };
+
+      await transporter.sendMail(mailOptions);
+
       return res.json({
         success: true,
         data: {
