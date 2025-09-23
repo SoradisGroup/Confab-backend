@@ -4,7 +4,6 @@ import crypto from "crypto";
 const BASE_URL =
   process.env.ICICI_BASE_URL || "https://uat-api.icicibank.com/orangepg";
 
-//
 const headers = {
   "Content-Type": "application/json",
   ClientId: process.env.ICICI_CLIENT_ID || "",
