@@ -3,6 +3,7 @@ import https from "https";
 import {
   generateSecureHash,
   generateTxnDate,
+  sendPaymentSuccessEmail,
 } from "../Utils/paymentFunctions.js";
 import nodemailer from "nodemailer";
 const BASE_URL =
@@ -70,6 +71,21 @@ export const intializePayment = async (req, res) => {
     const result = await response.json();
 
     if (result.responseCode === "R1000") {
+      const emailData = {
+        customerEmail: customerEmailID,
+        customerName: "Customer",
+        amount: amount,
+        merchantTxnNo: merchantTxnNo,
+        status: "initiated",
+      };
+
+      sendPaymentSuccessEmail(
+        merchantTxnNo,
+        amount,
+        customerEmailID,
+        req.body?.cart,
+        req.body?.addressDetail
+      );
       return res.json({
         success: true,
         data: {
