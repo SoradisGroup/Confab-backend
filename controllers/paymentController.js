@@ -5,7 +5,7 @@ import {
   generateTxnDate,
   sendPaymentSuccessEmail,
 } from "../Utils/paymentFunctions.js";
-import nodemailer from "nodemailer";
+
 const BASE_URL =
   process.env.ICICI_BASE_URL || "https://uat-api.icicibank.com/orangepg";
 
@@ -31,6 +31,9 @@ export const intializePayment = async (req, res) => {
       merchantTxnNo,
       addlParam1 = "",
       addlParam2 = "",
+      cart,
+      addressDetail,
+      currency
     } = req.body;
 
     // Validate required fields
@@ -41,11 +44,18 @@ export const intializePayment = async (req, res) => {
       });
     }
 
+    // console.log(req.body);
+
+
+    // 356 - Rupiees
+    // 840 - Dollar
+    // 978 - Euro
+
     const paymentData = {
       merchantId: config.merchantId,
       merchantTxnNo: merchantTxnNo,
       amount: parseFloat(amount).toFixed(2),
-      currencyCode: "356",
+      currencyCode: currency === 'INR' ? "356" : "978",
       payType: "0", // Standard mode
       customerEmailID: customerEmailID,
       transactionType: "SALE",
@@ -71,21 +81,24 @@ export const intializePayment = async (req, res) => {
     const result = await response.json();
 
     if (result.responseCode === "R1000") {
-      const emailData = {
-        customerEmail: customerEmailID,
-        customerName: "Customer",
-        amount: amount,
-        merchantTxnNo: merchantTxnNo,
-        status: "initiated",
-      };
+      // const emailData = {
+      //   customerEmail: customerEmailID,
+      //   customerName: "Customer",
+      //   amount: amount,
+      //   merchantTxnNo: merchantTxnNo,
+      //   status: "initiated",
+      // };
 
-      sendPaymentSuccessEmail(
-        merchantTxnNo,
-        amount,
-        customerEmailID,
-        req.body?.cart,
-        req.body?.addressDetail
-      );
+
+   await sendPaymentSuccessEmail({
+  merchantTxnNo: paymentData.merchantTxnNo,
+  amount: paymentData.amount,
+  customerEmailID: paymentData.customerEmailID,
+  cart,
+  addressDetail,
+});
+
+ 
       return res.json({
         success: true,
         data: {
@@ -109,31 +122,93 @@ export const intializePayment = async (req, res) => {
   }
 };
 
-// ✅ Status Check API
-export const statusCheck = async (req, res) => {
+// Handle payment callback (This will receive form POST from ICICI)
+export const HandlePaymentCallback = (req, res) => {
   try {
-    const response = await axios.post(`${BASE_URL}/statusCheck`, req.body, {
-      headers,
-    });
-    return res.json(response.data);
-  } catch (err) {
-    console.error("❌ Status Check Error:", err.message);
-    return res.status(500).json({ error: err.message });
+    const callbackData = req.body;
+
+    // Verify secure hash
+    const receivedHash = callbackData.secureHash;
+    delete callbackData.secureHash;
+
+    const calculatedHash = generateSecureHash(callbackData);
+
+    if (receivedHash !== calculatedHash) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid secure hash",
+      });
+    }
+
+    // Check payment status
+    if (
+      callbackData.responseCode === "000" ||
+      callbackData.responseCode === "0000"
+    ) {
+      // Payment successful - redirect to frontend success page
+      res.redirect(
+        `http://192.168.1.7:3000/payment-callback?status=success&txnId=${callbackData.txnID}&merchantTxnNo=${callbackData.merchantTxnNo}&amount=${callbackData.amount}`
+      );
+    } else {
+      // Payment failed - redirect to frontend failure page
+      res.redirect(
+        `http://192.168.1.7:3000/payment-callback?status=failed&error=${encodeURIComponent(
+          callbackData.respDescription || "Payment failed"
+        )}&merchantTxnNo=${callbackData.merchantTxnNo}`
+      );
+    }
+  } catch (error) {
+    console.error("Payment callback error:", error);
+    res.redirect(
+      `http://192.168.1.7:3000/payment-callback?status=error&error=${encodeURIComponent(
+        "Internal server error"
+      )}`
+    );
   }
 };
 
-// ✅ Payment Advice API (Callback from ICICI)
-export const paymentAdvice = async (req, res) => {
-  console.log("📩 Payment Advice Received:", req.body);
+// Check transaction status
+export const checkStatus = async (req, res) => {
+  try {
+    const { merchantTxnNo } = req.body;
 
-  // Here you should update your DB with transaction status
-  return res.status(200).json({ message: "Advice received" });
-};
+    if (!merchantTxnNo) {
+      return res.status(400).json({
+        success: false,
+        message: "merchantTxnNo is required",
+      });
+    }
 
-// ✅ Settlement Advice API (Callback from ICICI)
-export const settlementAdvice = async (req, res) => {
-  console.log("📩 Settlement Advice Received:", req.body);
+    const statusData = {
+      merchantID: config.merchantId,
+      merchantTxnNo: merchantTxnNo,
+      originalTxnNo: merchantTxnNo,
+      transactionType: "STATUS",
+    };
 
-  // Here you should update your DB with settlement details
-  return res.status(200).json({ message: "Settlement received" });
+    statusData.secureHash = generateSecureHash(statusData);
+
+    const formData = new URLSearchParams(statusData);
+
+    const response = await fetch(`${config.baseURL}/pg/api/command`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    return res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Transaction status check error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 };
