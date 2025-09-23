@@ -34,31 +34,24 @@ function generateTxnDate() {
   return `${year}${month}${day}${hours}${minutes}${seconds}`;
 }
 
-export async function sendPaymentSuccessEmail(
-  {merchantTxnNo,
+export async function sendPaymentSuccessEmail({
+  merchantTxnNo,
   amount,
   customerEmailID,
   cart,
-  addressDetail}
-) {
+  addressDetail,
+}) {
   try {
     let cartItems = [];
-    
+
     if (Array.isArray(cart)) {
       cartItems = cart;
     } else if (cart && typeof cart === "object") {
       cartItems = [cart]; // wrap single object into an array
     }
-<<<<<<< HEAD
-    //
 
     // Build cart HTML for email
     const cartHTML =
-=======
-    
-          // Build cart HTML for email
-        const cartHTML =
->>>>>>> 4adc056129549889f3b833a213c7aec094324b6f
       cartItems.length > 0
         ? `
           <h3>Cart Details:</h3>
@@ -68,12 +61,15 @@ export async function sendPaymentSuccessEmail(
               <th>Duration</th>
               <th>Price</th>
             </tr>
-            ${cartItems?.map(
+            ${cartItems
+              ?.map(
                 (item) => `
                 <tr>
                   <td>${item.name}</td>
                   <td>${item.selectedDuration?.name || "-"}</td>
-                  <td>${item.selectedDuration?.price || item.purchaseAtPrice || 0} INR</td>
+                  <td>${
+                    item.selectedDuration?.price || item.purchaseAtPrice || 0
+                  } INR</td>
                 </tr>
               `
               )
@@ -81,14 +77,16 @@ export async function sendPaymentSuccessEmail(
           </table>
         `
         : "";
-    
-          // Build address HTML for email
-          const address = addressDetail;
-          const addressHTML = address
-            ? `
+
+    // Build address HTML for email
+    const address = addressDetail;
+    const addressHTML = address
+      ? `
             <h3>Address Details:</h3>
             <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
-              <tr><td>Name:</td><td>${address.salutation} ${address.firstName} ${address.lastName}</td></tr>
+              <tr><td>Name:</td><td>${address.salutation} ${
+          address.firstName
+        } ${address.lastName}</td></tr>
               <tr><td>Email:</td><td>${address.email}</td></tr>
               <tr><td>Phone:</td><td>${address.phone}</td></tr>
               <tr><td>Company:</td><td>${address.companyName || "-"}</td></tr>
@@ -101,54 +99,6 @@ export async function sendPaymentSuccessEmail(
               <tr><td>Duration:</td><td>${address.duration || "-"}</td></tr>
             </table>
           `
-            : "";
-    
-          // Send email after payment initiation success
-          const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
-          });
-    
-          const mailOptions = {
-            from: process.env.GMAIL_USER,
-            to: process.env.GMAIL_USER,
-            replyTo: customerEmailID,
-            subject: `Payment Success: ${merchantTxnNo}`,
-            html: `
-              <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 20px;">
-                <h2>Payment Successful</h2>
-                <p>Transaction No: ${merchantTxnNo}</p>
-                <p>Amount: ${amount} INR</p>
-                ${cartHTML}
-                ${addressHTML}
-              </div>
-            `,
-          };
-    
-          await transporter.sendMail(mailOptions);
-
-<<<<<<< HEAD
-    // Build address HTML for email
-    const address = addressDetail;
-    const addressHTML = address
-      ? `
-        <h3>Address Details:</h3>
-        <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
-          <tr><td>Name:</td><td>${address.salutation} ${address.firstName} ${
-          address.lastName
-        }</td></tr>
-          <tr><td>Email:</td><td>${address.email}</td></tr>
-          <tr><td>Phone:</td><td>${address.phone}</td></tr>
-          <tr><td>Company:</td><td>${address.companyName || "-"}</td></tr>
-          <tr><td>Street:</td><td>${address.streetAddress || "-"}</td></tr>
-          <tr><td>City:</td><td>${address.city || "-"}</td></tr>
-          <tr><td>State:</td><td>${address.state || "-"}</td></tr>
-          <tr><td>Country:</td><td>${address.country || "-"}</td></tr>
-          <tr><td>Pin Code:</td><td>${address.pinCode || "-"}</td></tr>
-          <tr><td>Service:</td><td>${address.service || "-"}</td></tr>
-          <tr><td>Duration:</td><td>${address.duration || "-"}</td></tr>
-        </table>
-      `
       : "";
 
     // Send email after payment initiation success
@@ -160,21 +110,21 @@ export async function sendPaymentSuccessEmail(
     const mailOptions = {
       from: process.env.GMAIL_USER,
       to: process.env.GMAIL_USER,
+      replyTo: customerEmailID,
       subject: `Payment Success: ${merchantTxnNo}`,
       html: `
-          <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 20px;">
-            <h2>Payment Successful</h2>
-            <p>Transaction No: ${merchantTxnNo}</p>
-            <p>Amount: ${amount} INR</p>
-            ${cartHTML}
-            ${addressHTML}
-          </div>
-        `,
+              <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 20px;">
+                <h2>Payment Successful</h2>
+                <p>Transaction No: ${merchantTxnNo}</p>
+                <p>Amount: ${amount} INR</p>
+                ${cartHTML}
+                ${addressHTML}
+              </div>
+            `,
     };
 
     await transporter.sendMail(mailOptions);
-=======
->>>>>>> 4adc056129549889f3b833a213c7aec094324b6f
+
     console.log("Payment success email sent");
   } catch (error) {
     console.error("Error sending payment success email:", error);
