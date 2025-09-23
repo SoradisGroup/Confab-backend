@@ -1,5 +1,7 @@
 import { Router } from "express";
 import {
+    checkStatus,
+  HandlePaymentCallback,
   intializePayment,
 } from "../controllers/paymentController.js";
 
