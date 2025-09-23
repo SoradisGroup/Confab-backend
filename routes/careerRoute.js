@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { sendCareerEmail } from "../controllers/careerController.ts";
+import { sendCareerEmail } from "../controllers/careerController.js";
 
 const router = Router();
 
