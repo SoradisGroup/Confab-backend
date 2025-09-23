@@ -1,6 +1,10 @@
 import axios from "axios";
-import crypto from "crypto";
-
+import https from "https";
+import {
+  generateSecureHash,
+  generateTxnDate,
+} from "../Utils/paymentFunctions.js";
+import nodemailer from "nodemailer";
 const BASE_URL =
   process.env.ICICI_BASE_URL || "https://uat-api.icicibank.com/orangepg";
 
@@ -10,70 +14,82 @@ const headers = {
   ClientSecret: process.env.ICICI_CLIENT_SECRET || "",
 };
 
-const RETURN_URL = process.env.ICICI_RETURN_URL;
+const config = {
+  merchantId: "T_03342",
+  merchantSecretKey: "abc",
+  baseURL: "https://qa.phicommerce.com",
+  returnURL: "https://confab360degree.com/shipping", // Your Next.js callback page
+};
 
-// ✅ Initiate Sale API
-export const initiateSale = async (req, res) => {
+export const intializePayment = async (req, res) => {
   try {
     const {
       amount,
       customerEmailID,
       customerMobileNo,
-      addlParam1,
-      addlParam2,
+      merchantTxnNo,
+      addlParam1 = "",
+      addlParam2 = "",
     } = req.body;
 
-    // Generate unique merchantTxnNo
-    const merchantTxnNo = `TXN${Date.now()}`;
+    // Validate required fields
+    if (!amount || !customerEmailID || !customerMobileNo || !merchantTxnNo) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
 
-    // Current date in ICICI format YYYYMMDDHHMMSS
-    const now = new Date();
-    const txnDate =
-      now.getFullYear().toString() +
-      String(now.getMonth() + 1).padStart(2, "0") +
-      String(now.getDate()).padStart(2, "0") +
-      String(now.getHours()).padStart(2, "0") +
-      String(now.getMinutes()).padStart(2, "0") +
-      String(now.getSeconds()).padStart(2, "0");
-
-    // Secure Hash generation
-    const hashKey = `${addlParam1}${addlParam2}${amount}356${customerEmailID}${customerMobileNo}${process.env.ICICI_MERCHANT_ID}${merchantTxnNo}0${RETURN_URL}SALE${txnDate}`;
-
-    const secureHash = crypto
-      .createHash("sha256")
-      .update(hashKey)
-      .digest("hex");
-
-    // Construct payload dynamically
-    const payload = {
-      merchantId: process.env.ICICI_MERCHANT_ID,
-      merchantTxnNo,
-      amount,
+    const paymentData = {
+      merchantId: config.merchantId,
+      merchantTxnNo: merchantTxnNo,
+      amount: parseFloat(amount).toFixed(2),
       currencyCode: "356",
-      payType: "0",
-      customerEmailID,
-      customerMobileNo,
+      payType: "0", // Standard mode
+      customerEmailID: customerEmailID,
       transactionType: "SALE",
-      txnDate,
-      returnURL: RETURN_URL,
-      addlParam1,
-      addlParam2,
-      secureHash,
+      txnDate: generateTxnDate(),
+      returnURL: config.returnURL,
+      customerMobileNo: customerMobileNo,
+      addlParam1: addlParam1,
+      addlParam2: addlParam2,
     };
 
-    // Call ICICI UAT InitiateSale API
-    const response = await axios.post(`${BASE_URL}/initiateSale`, payload, {
-      headers: { "Content-Type": "application/json" },
+    // Generate secure hash
+    paymentData.secureHash = generateSecureHash(paymentData);
+
+    // Make API call to ICICI
+    const response = await fetch(`${config.baseURL}/pg/api/v2/initiateSale`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(paymentData),
     });
 
-    // Send back redirectURI & tranCtx to frontend
-    res.json({
-      redirectURI: response.data.redirectURI,
-      tranCtx: response.data.tranCtx,
-    });
+    const result = await response.json();
+
+    if (result.responseCode === "R1000") {
+      return res.json({
+        success: true,
+        data: {
+          redirectURI: result.redirectURI,
+          tranCtx: result.tranCtx,
+          merchantTxnNo: merchantTxnNo,
+        },
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: result.responseDescription || "Payment initiation failed",
+      });
+    }
   } catch (error) {
-    console.error(error.response?.data || error.message);
-    res.status(500).json({ error: "Payment initiation failed" });
+    console.error("Payment initiation error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 
