@@ -47,6 +47,7 @@ export async function sendPaymentSuccessEmail(
     } else if (cart && typeof cart === "object") {
       cartItems = [cart]; // wrap single object into an array
     }
+    //
 
     // Build cart HTML for email
     const cartHTML =
@@ -108,7 +109,6 @@ export async function sendPaymentSuccessEmail(
     const mailOptions = {
       from: process.env.GMAIL_USER,
       to: process.env.GMAIL_USER,
-      replyTo: customerEmailID,
       subject: `Payment Success: ${merchantTxnNo}`,
       html: `
           <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 20px;">
