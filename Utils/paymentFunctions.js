@@ -249,11 +249,16 @@ export async function sendPaymentSuccessEmail({ merchantTxnNo, amount, customerE
       auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
     });
 
+<<<<<<< HEAD
     await transporter.sendMail({
+=======
+    const mailOptions = {
+>>>>>>> 328ae70e0eedeae7f3d14f396a195ab1d3dc83c9
       from: process.env.GMAIL_USER,
       to: process.env.GMAIL_USER,
       replyTo: customerEmailID,
       subject: `Payment Success: ${merchantTxnNo}`,
+<<<<<<< HEAD
       html: `<div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 20px;">
         <h2>Payment Successful</h2>
         <p>Transaction No: ${merchantTxnNo}</p>
@@ -262,6 +267,20 @@ export async function sendPaymentSuccessEmail({ merchantTxnNo, amount, customerE
         ${addressHTML}
       </div>`,
     });
+=======
+      html: `
+              <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 20px;">
+                <h2>Payment Successful</h2>
+                <p>Transaction No: ${merchantTxnNo}</p>
+                <p>Amount: ${amount} INR</p>
+                ${cartHTML}
+                ${addressHTML}
+              </div>
+            `,
+    };
+
+    await transporter.sendMail(mailOptions);
+>>>>>>> 328ae70e0eedeae7f3d14f396a195ab1d3dc83c9
 
     console.log("Payment success email sent");
   } catch (error) {
