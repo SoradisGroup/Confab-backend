@@ -34,10 +34,11 @@ export const intializePayment = async (req, res) => {
       addlParam2 = "",
       cart,
       addressDetail,
-      currency
+      currency,
     } = req.body;
 
-    const { merchantId,merchantSecretKey,baseURL,returnURL } = getICICIConfig();
+    const { merchantId, merchantSecretKey, baseURL, returnURL } =
+      getICICIConfig();
 
     // Validate required fields
     if (!amount || !customerEmailID || !customerMobileNo || !merchantTxnNo) {
@@ -57,7 +58,7 @@ export const intializePayment = async (req, res) => {
       merchantId: merchantId,
       merchantTxnNo: merchantTxnNo,
       amount: parseFloat(amount).toFixed(2),
-      currencyCode: currency === 'INR' ? "356" : "978",
+      currencyCode: currency === "INR" ? "356" : "978",
       payType: "0", // Standard mode
       customerEmailID: customerEmailID,
       transactionType: "SALE",
@@ -71,11 +72,10 @@ export const intializePayment = async (req, res) => {
     // Generate secure hash
     paymentData.secureHash = generateSecureHash(paymentData);
 
-
     console.log("Payment Data:", {
-  ...paymentData,
-  secureHash: paymentData.secureHash.substring(0, 20) + "..." // Only show first 20 chars for security
-});
+      ...paymentData,
+      secureHash: paymentData.secureHash.substring(0, 20) + "...", // Only show first 20 chars for security
+    });
 
     // Make API call to ICICI
     const response = await fetch(`${baseURL}/pg/api/v2/initiateSale`, {
@@ -97,13 +97,13 @@ export const intializePayment = async (req, res) => {
       //   status: "initiated",
       // };
 
-   await sendPaymentSuccessEmail({
-  merchantTxnNo: paymentData.merchantTxnNo,
-  amount: paymentData.amount,
-  customerEmailID: paymentData.customerEmailID,
-  cart,
-  addressDetail,
-});
+      await sendPaymentSuccessEmail({
+        merchantTxnNo: paymentData.merchantTxnNo,
+        amount: paymentData.amount,
+        customerEmailID: paymentData.customerEmailID,
+        cart,
+        addressDetail,
+      });
 
       return res.json({
         success: true,
@@ -178,7 +178,8 @@ export const checkStatus = async (req, res) => {
   try {
     const { merchantTxnNo } = req.body;
 
-    const { merchantId,merchantSecretKey,baseURL,returnURL } = getICICIConfig();
+    const { merchantId, merchantSecretKey, baseURL, returnURL } =
+      getICICIConfig();
 
     if (!merchantTxnNo) {
       return res.status(400).json({
@@ -221,14 +222,7 @@ export const checkStatus = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
-
-
+//
 
 // // import fetch from "node-fetch"; // or global fetch in Node 18+
 // import {
@@ -279,14 +273,10 @@ export const checkStatus = async (req, res) => {
 //     addlParam1: addlParam1 ?? "",
 //     addlParam2: addlParam2 ?? "",
 //     payType: "0", // include in payload, but NOT in hash
-//     }; 
-
-
-    
+//     };
 
 //     // Generate secure hash for ICICI
 //     paymentData.secureHash = generateSecureHash(paymentData);
-
 
 // //     console.log("=== HASH DEBUG ===");
 // // console.log("Payment data for hash:", {
