@@ -72,10 +72,10 @@ export const intializePayment = async (req, res) => {
     // Generate secure hash
     paymentData.secureHash = generateSecureHash(paymentData);
 
-    //     console.log("Payment Data:", {
-    //   ...paymentData,
-    //   secureHash: paymentData.secureHash.substring(0, 20) + "..." // Only show first 20 chars for security
-    // });
+        console.log("Payment Data:", {
+      ...paymentData,
+      secureHash: paymentData.secureHash.substring(0, 20) + "..." // Only show first 20 chars for security
+    });
 
     // Make API call to ICICI
     const response = await fetch(`${baseURL}/pg/api/v2/initiateSale`, {
