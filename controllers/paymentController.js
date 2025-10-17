@@ -130,6 +130,7 @@ export const intializePayment = async (req, res) => {
   } catch (error) {
     console.error("Payment initiation error:", error);
     return res.status(500).json({
+      error: error,
       success: false,
       message: "Internal server error",
     });
