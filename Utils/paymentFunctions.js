@@ -13,8 +13,6 @@ export function getICICIConfig() {
 export function generateSecureHash(data) {
 
   const { merchantSecretKey } = getICICIConfig();
-
-  console.log("merchantSecretKey",merchantSecretKey);
   
   const sortedKeys = Object.keys(data).sort();
   const hashString = sortedKeys
@@ -29,8 +27,7 @@ export function generateSecureHash(data) {
   return hmac.digest("hex").toLowerCase();
 }
 
-export // Generate transaction date in required format
-function generateTxnDate() {
+export function generateTxnDate() {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");

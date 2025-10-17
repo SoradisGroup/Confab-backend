@@ -1,5 +1,3 @@
-import axios from "axios";
-import https from "https";
 import {
   generateSecureHash,
   generateTxnDate,
@@ -7,14 +5,14 @@ import {
   sendPaymentSuccessEmail,
 } from "../Utils/paymentFunctions.js";
 
-const BASE_URL =
-  process.env.ICICI_BASE_URL || "https://uat-api.icicibank.com/orangepg";
+// const BASE_URL =
+//   process.env.ICICI_BASE_URL || "https://uat-api.icicibank.com/orangepg";
 
-const headers = {
-  "Content-Type": "application/json",
-  ClientId: process.env.ICICI_CLIENT_ID || "",
-  ClientSecret: process.env.ICICI_CLIENT_SECRET || "",
-};
+// const headers = {
+//   "Content-Type": "application/json",
+//   ClientId: process.env.ICICI_CLIENT_ID || "",
+//   ClientSecret: process.env.ICICI_CLIENT_SECRET || "",
+// };
 
 // const config = {
 //   merchantId: "T_03342",
@@ -72,10 +70,11 @@ export const intializePayment = async (req, res) => {
     // Generate secure hash
     paymentData.secureHash = generateSecureHash(paymentData);
 
-        console.log("Payment Data:", {
-      ...paymentData,
-      secureHash: paymentData.secureHash.substring(0, 20) + "..." // Only show first 20 chars for security
-    });
+    //     console.log("Payment Data:", {
+    //   ...paymentData,
+    //   secureHash: paymentData.secureHash.substring(0, 20) + "..." // Only show first 20 chars for security
+    // });
+    
 
     // Make API call to ICICI
     const response = await fetch(`${baseURL}/pg/api/v2/initiateSale`, {
@@ -86,7 +85,9 @@ export const intializePayment = async (req, res) => {
       body: JSON.stringify(paymentData),
     });
 
+    
     const result = await response.json();
+    
 
     if (result.responseCode === "R1000") {
       // const emailData = {
@@ -113,12 +114,19 @@ export const intializePayment = async (req, res) => {
           merchantTxnNo: merchantTxnNo,
         },
       });
+
+
+
     } else {
+    
       return res.status(400).json({
         success: false,
         message: result.responseDescription || "Payment initiation failed",
       });
     }
+
+
+
   } catch (error) {
     console.error("Payment initiation error:", error);
     return res.status(500).json({
