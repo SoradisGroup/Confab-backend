@@ -3,7 +3,7 @@ import {
   generateTxnDate,
   getICICIConfig,
   sendPaymentSuccessEmail,
-} from "../utils/paymentFunctions.js";
+} from "../paymentFunctions.js";
 
 // const BASE_URL =
 //   process.env.ICICI_BASE_URL || "https://uat-api.icicibank.com/orangepg";
@@ -74,7 +74,6 @@ export const intializePayment = async (req, res) => {
     //   ...paymentData,
     //   secureHash: paymentData.secureHash.substring(0, 20) + "..." // Only show first 20 chars for security
     // });
-    
 
     // Make API call to ICICI
     const response = await fetch(`${baseURL}/pg/api/v2/initiateSale`, {
@@ -85,9 +84,7 @@ export const intializePayment = async (req, res) => {
       body: JSON.stringify(paymentData),
     });
 
-    
     const result = await response.json();
-    
 
     if (result.responseCode === "R1000") {
       // const emailData = {
@@ -114,19 +111,12 @@ export const intializePayment = async (req, res) => {
           merchantTxnNo: merchantTxnNo,
         },
       });
-
-
-
     } else {
-    
       return res.status(400).json({
         success: false,
         message: result.responseDescription || "Payment initiation failed",
       });
     }
-
-
-
   } catch (error) {
     console.error("Payment initiation error:", error);
     return res.status(500).json({
