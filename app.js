@@ -6,16 +6,13 @@ import paymentRoute from "./routes/paymentRoute.js";
 import careerRoute from "./routes/careerRoute.js";
 import contactRoute from "./routes/contactRoute.js";
 
-dotenv.config(
-  {
-    path: "./.env",
-  }
-);
+dotenv.config({
+  path: "./.env",
+});
 
 const app = express();
 const PORT = process.env.PORT;
 
-// 
 app.use(bodyParser.json());
 app.use(cors());
 
