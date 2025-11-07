@@ -3,7 +3,7 @@ import {
   generateTxnDate,
   getICICIConfig,
   sendPaymentSuccessEmail,
-} from "../Utils/paymentFunctions.js";
+} from "../utils/paymentFunctions.js";
 
 // const BASE_URL =
 //   process.env.ICICI_BASE_URL || "https://uat-api.icicibank.com/orangepg";
