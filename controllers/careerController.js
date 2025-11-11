@@ -1,9 +1,16 @@
-import nodemailer from "nodemailer"
+import nodemailer from "nodemailer";
 
 export const sendCareerEmail = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, subject, message } = req.body;
-    console.log("Career Form Data:", { firstName, lastName, email, phone, subject, message });
+    const { firstName, lastName, email, phone, subject, linkedIn } = req.body;
+    console.log("Career Form Data:", {
+      firstName,
+      lastName,
+      email,
+      phone,
+      subject,
+      linkedIn,
+    });
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -46,8 +53,8 @@ export const sendCareerEmail = async (req, res) => {
                     <td style="color: #555;">${subject}</td>
                   </tr>
                   <tr>
-                    <td style="font-weight: bold; color: #333; vertical-align: top;">Message:</td>
-                    <td style="color: #555;">${message}</td>
+                    <td style="font-weight: bold; color: #333; vertical-align: top;">LinkedIn:</td>
+                    <td style="color: #555;">${linkedIn}</td>
                   </tr>
                 </table>
               </td>
@@ -62,6 +69,11 @@ export const sendCareerEmail = async (req, res) => {
     res.status(200).json({ success: true, message: "Email sent successfully" });
   } catch (error) {
     console.error("Error sending career email:", error);
-    res.status(500).json({ success: false, message: error.message || "Failed to send email" });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: error.message || "Failed to send email",
+      });
   }
 };
