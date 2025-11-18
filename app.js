@@ -41,6 +41,14 @@ const allowedOrigins = [
 app.use("/api/payment", paymentRoute);
 app.use("/api/career", careerRoute);
 app.use("/api/contact", contactRoute);
+app.post("/api/payment/icici-return", (req, res) => {
+  console.log("Payment Response From ICICI:", req.body);
+
+  // OPTIONAL: save transaction, verify secure hash, update DB
+
+  // Redirect user back to service list page
+  res.redirect("https://www.confab360degree.com/service");
+});
 
 // server
 app.listen(PORT, () => {

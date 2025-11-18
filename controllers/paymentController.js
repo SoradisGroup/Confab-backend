@@ -61,7 +61,7 @@ export const intializePayment = async (req, res) => {
       customerEmailID: customerEmailID,
       transactionType: "SALE",
       txnDate: generateTxnDate(),
-      returnURL: "https://www.confab360degree.com/service",
+      returnURL: "https://api.confab360degree.com/api/payment/icici-return",
       customerMobileNo: customerMobileNo,
       addlParam1: addlParam1,
       addlParam2: addlParam2,
