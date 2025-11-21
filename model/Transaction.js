@@ -5,7 +5,7 @@ const TransactionSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     customerEmailID: { type: String, required: true },
     cart: { type: mongoose.Schema.Types.Mixed, required: true },
-    addressDetail: { type: String, required: true },
+    addressDetail: { type: mongoose.Schema.Types.Mixed, required: true },
   },
   {
     timestamps: true,
