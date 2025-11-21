@@ -51,18 +51,18 @@ app.use("/api/contact", contactRoute);
 app.post("/api/payment/icici-return", async (req, res) => {
   console.log("Payment Response From ICICI:", req.body);
 
-  const getTransaction = await Transaction.findOne({
-    merchantTxnNo: req.body.merchantTxnNo,
-  });
+  // const getTransaction = await Transaction.findOne({
+  //   merchantTxnNo: req.body.merchantTxnNo,
+  // });
 
-  if (getTransaction)
-    await sendPaymentSuccessEmail({
-      merchantTxnNo: getTransaction.merchantTxnNo,
-      amount: getTransaction.amount,
-      customerEmailID: getTransaction.customerEmailID,
-      cart: getTransaction.cart,
-      addressDetail: getTransaction.addressDetail,
-    });
+  // if (getTransaction)
+  //   await sendPaymentSuccessEmail({
+  //     merchantTxnNo: getTransaction.merchantTxnNo,
+  //     amount: getTransaction.amount,
+  //     customerEmailID: getTransaction.customerEmailID,
+  //     cart: getTransaction.cart,
+  //     addressDetail: getTransaction.addressDetail,
+  //   });
   // OPTIONAL: save transaction, verify secure hash, update DB
 
   // Redirect user back to service list page

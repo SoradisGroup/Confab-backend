@@ -95,7 +95,14 @@ export const intializePayment = async (req, res) => {
       //   merchantTxnNo: merchantTxnNo,
       //   status: "initiated",
       // };
-      const createTransaction = new Transaction({
+      // const createTransaction = new Transaction({
+      //   merchantTxnNo: paymentData.merchantTxnNo,
+      //   amount: paymentData.amount,
+      //   customerEmailID: paymentData.customerEmailID,
+      //   cart,
+      //   addressDetail,
+      // });
+      await sendPaymentSuccessEmail({
         merchantTxnNo: paymentData.merchantTxnNo,
         amount: paymentData.amount,
         customerEmailID: paymentData.customerEmailID,
