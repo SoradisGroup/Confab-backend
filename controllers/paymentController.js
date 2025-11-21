@@ -1,3 +1,4 @@
+import { Transaction } from "../model/Transaction.js";
 import {
   generateSecureHash,
   generateTxnDate,
@@ -94,15 +95,14 @@ export const intializePayment = async (req, res) => {
       //   merchantTxnNo: merchantTxnNo,
       //   status: "initiated",
       // };
-
-      await sendPaymentSuccessEmail({
+      const createTransaction = new Transaction({
         merchantTxnNo: paymentData.merchantTxnNo,
         amount: paymentData.amount,
         customerEmailID: paymentData.customerEmailID,
         cart,
         addressDetail,
       });
-
+      await createTransaction.save();
       return res.json({
         success: true,
         data: {

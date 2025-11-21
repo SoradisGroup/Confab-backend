@@ -5,6 +5,9 @@ import cors from "cors";
 import paymentRoute from "./routes/paymentRoute.js";
 import careerRoute from "./routes/careerRoute.js";
 import contactRoute from "./routes/contactRoute.js";
+import { sendPaymentSuccessEmail } from "./paymentFunctions.js";
+import { Transaction } from "./model/Transaction.js";
+import mongoose from "mongoose";
 
 dotenv.config({
   path: "./.env",
@@ -38,12 +41,28 @@ const allowedOrigins = [
 // app.options("*", cors());
 
 // Routing
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 app.use("/api/payment", paymentRoute);
 app.use("/api/career", careerRoute);
 app.use("/api/contact", contactRoute);
-app.post("/api/payment/icici-return", (req, res) => {
+app.post("/api/payment/icici-return", async (req, res) => {
   console.log("Payment Response From ICICI:", req.body);
 
+  const getTransaction = await Transaction.findOne({
+    merchantTxnNo: req.body.merchantTxnNo,
+  });
+
+  if (getTransaction)
+    await sendPaymentSuccessEmail({
+      merchantTxnNo: getTransaction.merchantTxnNo,
+      amount: getTransaction.amount,
+      customerEmailID: getTransaction.customerEmailID,
+      cart: getTransaction.cart,
+      addressDetail: getTransaction.addressDetail,
+    });
   // OPTIONAL: save transaction, verify secure hash, update DB
 
   // Redirect user back to service list page
