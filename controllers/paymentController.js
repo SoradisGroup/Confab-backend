@@ -109,7 +109,7 @@ export const intializePayment = async (req, res) => {
         cart,
         addressDetail,
       });
-      await createTransaction.save();
+      // await createTransaction.save();
       return res.json({
         success: true,
         data: {
