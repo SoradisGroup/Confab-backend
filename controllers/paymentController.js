@@ -68,6 +68,7 @@ export const intializePayment = async (req, res) => {
       addlParam2: addlParam2,
     };
 
+    console.log({ paymentData });
     // Generate secure hash
     paymentData.secureHash = generateSecureHash(paymentData);
 
