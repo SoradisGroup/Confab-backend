@@ -1,6 +1,5 @@
 import express from "express";
 import dotenv from "dotenv";
-import bodyParser from "body-parser";
 import cors from "cors";
 import paymentRoute from "./routes/paymentRoute.js";
 import careerRoute from "./routes/careerRoute.js";
@@ -16,8 +15,9 @@ dotenv.config({
 const app = express();
 const PORT = process.env.PORT;
 
-app.use(bodyParser.json());
 app.use(cors());
+app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
 
 // ✅ Configure CORS properly
 const allowedOrigins = [

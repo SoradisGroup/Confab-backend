@@ -135,6 +135,188 @@ export const intializePayment = async (req, res) => {
   }
 };
 
+export const intializePaymentForNeat = async (req, res) => {
+  try {
+    const {
+      amount,
+      customerEmailID,
+      customerMobileNo,
+      merchantTxnNo,
+      cart,
+      addressDetail,
+      currency,
+      // NEAT Portal params
+      courseid,
+      sessionid,
+      studentid,
+    } = req.body;
+
+    const { merchantId,  baseURL, } = getICICIConfig();
+
+    // Validate required fields
+    if (!amount || !customerEmailID || !customerMobileNo || !merchantTxnNo) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
+
+    // Validate NEAT required fields
+    if (!courseid || !studentid || !sessionid) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required NEAT portal fields (courseid, studentid, sessionid)",
+      });
+    }
+
+    const paymentData = {
+      merchantId: merchantId,
+      merchantTxnNo: merchantTxnNo,
+      amount: parseFloat(amount).toFixed(2),
+      currencyCode: currency === "INR" ? "356" : "978",
+      payType: "0",
+      customerEmailID: customerEmailID,
+      transactionType: "SALE",
+      txnDate: generateTxnDate(),
+      returnURL: "https://api.confab360degree.com/api/payment/icici-return",
+      customerMobileNo: customerMobileNo,
+      addlParam1: studentid,
+      addlParam2: `${courseid}|${sessionid}`,
+    };
+
+    console.log({ paymentData });
+
+    paymentData.secureHash = generateSecureHash(paymentData);
+
+    const response = await fetch(`${baseURL}/pg/api/v2/initiateSale`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(paymentData),
+    });
+
+    const result = await response.json();
+
+    if (result.responseCode === "R1000") {
+      // ✅ Send payment success email
+      await sendPaymentSuccessEmail({
+        merchantTxnNo: paymentData.merchantTxnNo,
+        amount: paymentData.amount,
+        customerEmailID: paymentData.customerEmailID,
+        cart,
+        addressDetail,
+      });
+
+      // ✅ Notify NEAT portal of successful payment
+      const NEAT_VERIFICATION_URL = "https://neat.aicte-india.org/payment-verification";
+      const neatParams = new URLSearchParams({
+        studentid: studentid,
+        Success: "1",
+        sessionid: sessionid,
+        payment: "online",
+        courseid: courseid,
+      });
+
+      await fetch(`${NEAT_VERIFICATION_URL}?${neatParams.toString()}`, {
+        method: "GET",
+      });
+
+      console.log(`NEAT notified: ${NEAT_VERIFICATION_URL}?${neatParams.toString()}`);
+
+      return res.json({
+        success: true,
+        data: {
+          redirectURI: result.redirectURI,
+          tranCtx: result.tranCtx,
+          merchantTxnNo: merchantTxnNo,
+          // Return NEAT redirect URL to frontend in case it needs to redirect user
+          neatRedirectURL: `${NEAT_VERIFICATION_URL}?${neatParams.toString()}`,
+        },
+      });
+    } else {
+      // ❌ Notify NEAT portal of failed payment
+      const NEAT_VERIFICATION_URL = "https://neat.aicte-india.org/payment-verification";
+      const neatFailParams = new URLSearchParams({
+        studentid: studentid,
+        Failure: "1",
+        sessionid: sessionid,
+        payment: "online",
+        courseid: courseid,
+      });
+
+      await fetch(`${NEAT_VERIFICATION_URL}?${neatFailParams.toString()}`, {
+        method: "GET",
+      });
+
+      console.log(`NEAT notified of failure: ${NEAT_VERIFICATION_URL}?${neatFailParams.toString()}`);
+
+      return res.status(400).json({
+        success: false,
+        message: result.responseDescription || "Payment initiation failed",
+        neatRedirectURL: `${NEAT_VERIFICATION_URL}?${neatFailParams.toString()}`,
+      });
+    }
+  } catch (error) {
+    console.error("Payment initiation error:", error);
+    return res.status(500).json({
+      error: error,
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+
+export const iciciReturnHandler = async (req, res) => {
+  console.log("hit")
+  try {
+    const {
+      responseCode,
+      addlParam1, // studentid (packed during initiation)
+      addlParam2, // courseid|sessionid (packed during initiation)
+    } = req.body; // ICICI sends POST to return URL
+
+    // Unpack NEAT params stored during initiation
+    const studentid = addlParam1;
+    const [courseid, sessionid] = (addlParam2 || "").split("|");
+
+    const NEAT_VERIFICATION_URL = "https://neat.aicte-india.org/payment-verification";
+
+    const isSuccess = responseCode === "R1000"; // Confirm ICICI's success code
+
+    if (isSuccess) {
+      // Build NEAT success redirect URL
+      const successParams = new URLSearchParams({
+        studentid: studentid,
+        Success: "1",
+        sessionid: sessionid,
+        payment: "online",
+        courseid: courseid,
+      });
+
+      return res.send(`${NEAT_VERIFICATION_URL}?${successParams.toString()}`);
+    } else {
+      // Build NEAT failure redirect URL
+      const failureParams = new URLSearchParams({
+        studentid: studentid,
+        Failure: "1",
+        sessionid: sessionid,
+        payment: "online",
+        courseid: courseid,
+      });
+
+      return res.redirect(`${NEAT_VERIFICATION_URL}?${failureParams.toString()}`);
+    }
+  } catch (error) {
+    console.error("ICICI return handler error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Return handler error",
+    });
+  }
+};
+
 // Handle payment callback (This will receive form POST from ICICI)
 export const HandlePaymentCallback = (req, res) => {
   try {
