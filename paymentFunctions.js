@@ -11,19 +11,28 @@ export function getICICIConfig() {
 }
 
 export function generateSecureHash(data) {
-
   const { merchantSecretKey } = getICICIConfig();
-  
-  const sortedKeys = Object.keys(data).sort();
-  const hashString = sortedKeys
-    .filter(
-      (key) => data[key] !== null && data[key] !== undefined && data[key] !== ""
+
+  // Step 1: Filter out null/undefined/empty, then sort keys alphabetically
+  const hashString = Object.keys(data)
+    .filter(key =>
+      data[key] !== null &&
+      data[key] !== undefined &&
+      data[key] !== "" &&
+      key !== "secureHash" // exclude secureHash itself if present
     )
-    .map((key) => data[key])
+    .sort() // sort AFTER filtering
+    .map(key => data[key])
     .join("");
 
+  console.log("=== HASH DEBUG ===");
+  console.log("Hash input string:", hashString);
+  console.log("currencyCode in hash:", data.currencyCode); // verify 978 vs 356
+  console.log("=================");
+
+  // Step 2: HMAC-SHA256 with ASCII encoding (as per PhiCommerce spec)
   const hmac = crypto.createHmac("sha256", merchantSecretKey);
-  hmac.update(hashString);
+  hmac.update(hashString, "ascii"); // ← ASCII is required by spec
   return hmac.digest("hex").toLowerCase();
 }
 
@@ -39,11 +48,11 @@ export function generateTxnDate() {
 }
 
 export async function sendPaymentSuccessEmail(
-  {merchantTxnNo,
-  amount,
-  customerEmailID,
-  cart,
-  addressDetail}
+  { merchantTxnNo,
+    amount,
+    customerEmailID,
+    cart,
+    addressDetail }
 ) {
   try {
     let cartItems = [];
@@ -54,8 +63,8 @@ export async function sendPaymentSuccessEmail(
       cartItems = [cart]; // wrap single object into an array
     }
 
-          // Build cart HTML for email
-        const cartHTML =
+    // Build cart HTML for email
+    const cartHTML =
       cartItems.length > 0
         ? `
           <h3>Cart Details:</h3>
@@ -66,23 +75,23 @@ export async function sendPaymentSuccessEmail(
               <th>Price</th>
             </tr>
             ${cartItems?.map(
-                (item) => `
+          (item) => `
                 <tr>
                   <td>${item.name}</td>
                   <td>${item.selectedDuration?.name || "-"}</td>
                   <td>${item.selectedDuration?.price || item.purchaseAtPrice || 0} INR</td>
                 </tr>
               `
-              )
-              .join("")}
+        )
+          .join("")}
           </table>
         `
         : "";
 
-          // Build address HTML for email
-          const address = addressDetail;
-          const addressHTML = address
-            ? `
+    // Build address HTML for email
+    const address = addressDetail;
+    const addressHTML = address
+      ? `
             <h3>Address Details:</h3>
             <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
               <tr><td>Name:</td><td>${address.salutation} ${address.firstName} ${address.lastName}</td></tr>
@@ -98,20 +107,20 @@ export async function sendPaymentSuccessEmail(
               <tr><td>Duration:</td><td>${address.duration || "-"}</td></tr>
             </table>
           `
-            : "";
+      : "";
 
-          // Send email after payment initiation success
-          const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
-          });
+    // Send email after payment initiation success
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
+    });
 
-          const mailOptions = {
-            from: process.env.GMAIL_USER,
-            to: process.env.GMAIL_USER,
-            replyTo: customerEmailID,
-            subject: `Payment Success: ${merchantTxnNo}`,
-            html: `
+    const mailOptions = {
+      from: process.env.GMAIL_USER,
+      to: process.env.GMAIL_USER,
+      replyTo: customerEmailID,
+      subject: `Payment Success: ${merchantTxnNo}`,
+      html: `
               <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 20px;">
                 <h2>Payment Successful</h2>
                 <p>Transaction No: ${merchantTxnNo}</p>
@@ -120,9 +129,9 @@ export async function sendPaymentSuccessEmail(
                 ${addressHTML}
               </div>
             `,
-          };
+    };
 
-          await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
 
     console.log("Payment success email sent");
   } catch (error) {

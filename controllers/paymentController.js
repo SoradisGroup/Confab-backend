@@ -58,18 +58,19 @@ export const intializePayment = async (req, res) => {
       merchantTxnNo: merchantTxnNo,
       amount: parseFloat(amount).toFixed(2),
       currencyCode: currency === "INR" ? "356" : "978",
-      payType: "0", // Standard mode
+      payType: "0",
       customerEmailID: customerEmailID,
       transactionType: "SALE",
       txnDate: generateTxnDate(),
       returnURL: "https://api.confab360degree.com/api/payment/icici-return",
       customerMobileNo: customerMobileNo,
-      addlParam1: addlParam1,
-      addlParam2: addlParam2,
     };
 
-    console.log({ paymentData });
-    // Generate secure hash
+    // Only add addlParams if they have actual values
+    if (addlParam1) paymentData.addlParam1 = addlParam1;
+    if (addlParam2) paymentData.addlParam2 = addlParam2;
+
+    // Generate hash AFTER building the complete object
     paymentData.secureHash = generateSecureHash(paymentData);
 
     //     console.log("Payment Data:", {
@@ -151,7 +152,7 @@ export const intializePaymentForNeat = async (req, res) => {
       studentid,
     } = req.body;
 
-    const { merchantId,  baseURL, } = getICICIConfig();
+    const { merchantId, baseURL, } = getICICIConfig();
 
     // Validate required fields
     if (!amount || !customerEmailID || !customerMobileNo || !merchantTxnNo) {
@@ -269,51 +270,30 @@ export const intializePaymentForNeat = async (req, res) => {
 
 
 export const iciciReturnHandler = async (req, res) => {
-  console.log("hit")
   try {
     const {
       responseCode,
-      addlParam1, // studentid (packed during initiation)
-      addlParam2, // courseid|sessionid (packed during initiation)
-    } = req.body; // ICICI sends POST to return URL
+      addlParam1,
+      addlParam2,
+    } = req.body;
 
-    // Unpack NEAT params stored during initiation
     const studentid = addlParam1;
     const [courseid, sessionid] = (addlParam2 || "").split("|");
 
-    const NEAT_VERIFICATION_URL = "https://neat.aicte-india.org/payment-verification";
+    const NEAT_URL = "https://neat.aicte-india.org/payment-verification";
 
-    const isSuccess = responseCode === "R1000"; // Confirm ICICI's success code
+    const isSuccess = responseCode === "R1000";
 
     if (isSuccess) {
-      // Build NEAT success redirect URL
-      const successParams = new URLSearchParams({
-        studentid: studentid,
-        Success: "1",
-        sessionid: sessionid,
-        payment: "online",
-        courseid: courseid,
-      });
-
-      return res.send(`${NEAT_VERIFICATION_URL}?${successParams.toString()}`);
+      const url = `${NEAT_URL}?studentid=${studentid}&Success=1&sessionid=${sessionid}&payment=online&courseid=${courseid}`;
+      return res.json({ url });
     } else {
-      // Build NEAT failure redirect URL
-      const failureParams = new URLSearchParams({
-        studentid: studentid,
-        Failure: "1",
-        sessionid: sessionid,
-        payment: "online",
-        courseid: courseid,
-      });
-
-      return res.redirect(`${NEAT_VERIFICATION_URL}?${failureParams.toString()}`);
+      const url = `${NEAT_URL}?studentid=${studentid}&Failure=1&sessionid=${sessionid}&payment=online&courseid=${courseid}`;
+      return res.json({ url });
     }
   } catch (error) {
-    console.error("ICICI return handler error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Return handler error",
-    });
+    console.error(error);
+    return res.status(500).send("Error");
   }
 };
 
