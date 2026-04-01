@@ -4,6 +4,7 @@ import {
   generateTxnDate,
   getICICIConfig,
   sendPaymentSuccessEmail,
+  sendPaymentSuccessEmailToCustomer,
 } from "../paymentFunctions.js";
 
 // const BASE_URL =
@@ -384,10 +385,10 @@ export const checkStatus = async (req, res) => {
 
     console.log("Transaction status result:", result);
 
-    if (result.responseCode === "R1000") {
-      const paymentData = localDataBase.find(
-        (item) => item.merchantTxnNo === merchantTxnNo
-      );
+    const paymentData = localDataBase.find(
+      (item) => item.merchantTxnNo === merchantTxnNo
+    );
+    if (result.responseCode != "R1000") {
       await sendPaymentSuccessEmail({
         merchantTxnNo: paymentData.merchantTxnNo,
         amount: paymentData.amount,
@@ -395,8 +396,15 @@ export const checkStatus = async (req, res) => {
         cart: paymentData.cart,
         addressDetail: paymentData.addressDetail,
       });
-      localDataBase = localDataBase.filter((item) => item.merchantTxnNo !== merchantTxnNo);
+      // await sendPaymentSuccessEmailToCustomer({
+      //   merchantTxnNo: paymentData.merchantTxnNo,
+      //   amount: paymentData.amount,
+      //   customerEmailID: paymentData.customerEmailID,
+      //   cart: paymentData.cart,
+      //   addressDetail: paymentData.addressDetail,
+      // });
     }
+    localDataBase = localDataBase.filter((item) => item.merchantTxnNo !== merchantTxnNo);
 
     return res.json({
       success: true,
