@@ -66,7 +66,8 @@ app.post("/api/payment/icici-return", async (req, res) => {
   // OPTIONAL: save transaction, verify secure hash, update DB
 
   // Redirect user back to service list page
-  res.redirect("https://www.confab360degree.com/shipping/success");
+  const merchantTxnNo = req.query.merchantTxnNo ?? "";
+  res.redirect("https://www.confab360degree.com/shipping/success?merchantTxnNo=" + merchantTxnNo);
 });
 
 // server

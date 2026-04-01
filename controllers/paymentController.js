@@ -22,6 +22,7 @@ import {
 //   returnURL: "https://confab360degree.com/shipping", // Your Next.js callback page
 // };
 
+let localDataBase = []
 export const intializePayment = async (req, res) => {
   try {
     const {
@@ -62,9 +63,11 @@ export const intializePayment = async (req, res) => {
       customerEmailID: customerEmailID,
       transactionType: "SALE",
       txnDate: generateTxnDate(),
-      returnURL: "https://api.confab360degree.com/api/payment/icici-return",
+      returnURL: "https://api.confab360degree.com/api/payment/icici-return?merchantTxnNo=" + merchantTxnNo,
       customerMobileNo: customerMobileNo,
     };
+
+    console.log({ paymentData })
 
     // Only add addlParams if they have actual values
     if (addlParam1) paymentData.addlParam1 = addlParam1;
@@ -104,13 +107,14 @@ export const intializePayment = async (req, res) => {
       //   cart,
       //   addressDetail,
       // });
-      await sendPaymentSuccessEmail({
+      localDataBase.push({
         merchantTxnNo: paymentData.merchantTxnNo,
         amount: paymentData.amount,
         customerEmailID: paymentData.customerEmailID,
         cart,
         addressDetail,
-      });
+      })
+
       // await createTransaction.save();
       return res.json({
         success: true,
@@ -378,9 +382,25 @@ export const checkStatus = async (req, res) => {
 
     const result = await response.json();
 
+    console.log("Transaction status result:", result);
+
+    if (result.responseCode === "R1000") {
+      const paymentData = localDataBase.find(
+        (item) => item.merchantTxnNo === merchantTxnNo
+      );
+      await sendPaymentSuccessEmail({
+        merchantTxnNo: paymentData.merchantTxnNo,
+        amount: paymentData.amount,
+        customerEmailID: paymentData.customerEmailID,
+        cart: paymentData.cart,
+        addressDetail: paymentData.addressDetail,
+      });
+    }
+
     return res.json({
       success: true,
       data: result,
+      responseCode: result?.responseCode || "000",
     });
   } catch (error) {
     console.error("Transaction status check error:", error);

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-    checkStatus,
+  checkStatus,
   HandlePaymentCallback,
   iciciReturnHandler,
   intializePayment,

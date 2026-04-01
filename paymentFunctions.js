@@ -1,6 +1,10 @@
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
+import { Resend } from "resend";
+
+const resend = new Resend("re_VuiAxygU_L7nfYZoRqBhft2DcXMTfXBaA");
+
 export function getICICIConfig() {
   return {
     merchantId: process.env.ICICI_MERCHANT_ID,
@@ -47,98 +51,121 @@ export function generateTxnDate() {
   return `${year}${month}${day}${hours}${minutes}${seconds}`;
 }
 
-export async function sendPaymentSuccessEmail(
-  { merchantTxnNo,
-    amount,
-    customerEmailID,
-    cart,
-    addressDetail }
-) {
+export async function sendPaymentSuccessEmail({
+  merchantTxnNo,
+  amount,
+  customerEmailID,
+  cart,
+  addressDetail,
+}) {
   try {
     let cartItems = [];
 
     if (Array.isArray(cart)) {
       cartItems = cart;
     } else if (cart && typeof cart === "object") {
-      cartItems = [cart]; // wrap single object into an array
+      cartItems = [cart];
     }
 
-    // Build cart HTML for email
+    // Cart HTML
     const cartHTML =
       cartItems.length > 0
         ? `
-          <h3>Cart Details:</h3>
-          <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
-            <tr style="background-color:#f4f6f8;">
-              <th style="text-align:left;">Name</th>
-              <th>Duration</th>
-              <th>Price</th>
-            </tr>
-            ${cartItems?.map(
-          (item) => `
-                <tr>
-                  <td>${item.name}</td>
-                  <td>${item.selectedDuration?.name || "-"}</td>
-                  <td>${item.selectedDuration?.price || item.purchaseAtPrice || 0} INR</td>
-                </tr>
-              `
-        )
+        <h3>Cart Details:</h3>
+        <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+          <tr style="background-color:#f4f6f8;">
+            <th style="text-align:left;">Name</th>
+            <th>Duration</th>
+            <th>Price</th>
+          </tr>
+          ${cartItems
+          .map(
+            (item) => `
+              <tr>
+                <td>${item.name}</td>
+                <td>${item.selectedDuration?.name || "-"}</td>
+                <td>${item.selectedDuration?.price ||
+              item.purchaseAtPrice ||
+              0
+              } INR</td>
+              </tr>
+            `
+          )
           .join("")}
-          </table>
-        `
+        </table>
+      `
         : "";
 
-    // Build address HTML for email
+    // Address HTML
     const address = addressDetail;
     const addressHTML = address
       ? `
-            <h3>Address Details:</h3>
-            <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
-              <tr><td>Name:</td><td>${address.salutation} ${address.firstName} ${address.lastName}</td></tr>
-              <tr><td>Email:</td><td>${address.email}</td></tr>
-              <tr><td>Phone:</td><td>${address.phone}</td></tr>
-              <tr><td>Company:</td><td>${address.companyName || "-"}</td></tr>
-              <tr><td>Street:</td><td>${address.streetAddress || "-"}</td></tr>
-              <tr><td>City:</td><td>${address.city || "-"}</td></tr>
-              <tr><td>State:</td><td>${address.state || "-"}</td></tr>
-              <tr><td>Country:</td><td>${address.country || "-"}</td></tr>
-              <tr><td>Pin Code:</td><td>${address.pinCode || "-"}</td></tr>
-              <tr><td>Service:</td><td>${address.service || "-"}</td></tr>
-              <tr><td>Duration:</td><td>${address.duration || "-"}</td></tr>
-            </table>
-          `
+        <h3>Address Details:</h3>
+        <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+          <tr><td>Name:</td><td>${address.salutation} ${address.firstName} ${address.lastName}</td></tr>
+          <tr><td>Email:</td><td>${address.email}</td></tr>
+          <tr><td>Phone:</td><td>${address.phone}</td></tr>
+          <tr><td>Company:</td><td>${address.companyName || "-"}</td></tr>
+          <tr><td>Street:</td><td>${address.streetAddress || "-"}</td></tr>
+          <tr><td>City:</td><td>${address.city || "-"}</td></tr>
+          <tr><td>State:</td><td>${address.state || "-"}</td></tr>
+          <tr><td>Country:</td><td>${address.country || "-"}</td></tr>
+          <tr><td>Pin Code:</td><td>${address.pinCode || "-"}</td></tr>
+          <tr><td>Service:</td><td>${address.service || "-"}</td></tr>
+          <tr><td>Duration:</td><td>${address.duration || "-"}</td></tr>
+        </table>
+      `
       : "";
 
-    // Send email after payment initiation success
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
-    });
-
-    const mailOptions = {
-      from: process.env.GMAIL_USER,
-      to: process.env.GMAIL_USER,
-      replyTo: customerEmailID,
+    const { error } = await resend.emails.send({
+      from: "Confab360 <onboarding@resend.dev>", // same as your ticket email
+      to: "confab360degree01@gmail.com", // or admin email
+      reply_to: customerEmailID,
       subject: `Payment Success: ${merchantTxnNo}`,
       html: `
-              <div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 20px;">
-                <h2>Payment Successful</h2>
-                <p>Transaction No: ${merchantTxnNo}</p>
-                <p>Amount: ${amount} INR</p>
+        <body style="font-family:Arial;background:#f6f7fb;padding:40px">
+          <table width="500" align="center" style="background:white;padding:30px;border-radius:12px">
+            
+            <tr>
+              <td align="center">
+                <h2 style="color:#7A4A36">CONFAB360</h2>
+                <p>Payment Confirmation</p>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <h3>Payment Successful 🎉</h3>
+                <p><strong>Transaction No:</strong> ${merchantTxnNo}</p>
+                <p><strong>Amount:</strong> ${amount} INR</p>
+
                 ${cartHTML}
                 ${addressHTML}
-              </div>
-            `,
-    };
 
-    await transporter.sendMail(mailOptions);
+                <hr style="margin:25px 0"/>
 
-    console.log("Payment success email sent");
+                <p style="font-size:12px;color:#888">
+                  This is an automated confirmation email.
+                </p>
+              </td>
+            </tr>
+
+          </table>
+
+          <h6 style="text-align:center;">OMESSENCE LLC All Rights Reserved.</h6>
+        </body>
+      `,
+    });
+
+    if (error) throw error;
+
+    console.log("Payment success email sent via Resend");
+    return true;
   } catch (error) {
     console.error("Error sending payment success email:", error);
+    return false;
   }
 }
-
 
 
 
