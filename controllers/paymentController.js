@@ -395,6 +395,7 @@ export const checkStatus = async (req, res) => {
         cart: paymentData.cart,
         addressDetail: paymentData.addressDetail,
       });
+      localDataBase = localDataBase.filter((item) => item.merchantTxnNo !== merchantTxnNo);
     }
 
     return res.json({
