@@ -408,7 +408,6 @@ export const checkStatus = async (req, res) => {
       //   addressDetail: paymentData.addressDetail,
       // });
     }
-    localDataBase = localDataBase.filter((item) => item.merchantTxnNo !== merchantTxnNo);
 
     return res.json({
       success: true,
