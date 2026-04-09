@@ -101,13 +101,14 @@ export const intializePayment = async (req, res) => {
       //   merchantTxnNo: merchantTxnNo,
       //   status: "initiated",
       // };
-      // const createTransaction = new Transaction({
-      //   merchantTxnNo: paymentData.merchantTxnNo,
-      //   amount: paymentData.amount,
-      //   customerEmailID: paymentData.customerEmailID,
-      //   cart,
-      //   addressDetail,
-      // });
+      const createTransaction = new Transaction({
+        merchantTxnNo: paymentData.merchantTxnNo,
+        amount: paymentData.amount,
+        customerEmailID: paymentData.customerEmailID,
+        cart,
+        addressDetail,
+      });
+      await createTransaction.save();
       localDataBase.push({
         merchantTxnNo: paymentData.merchantTxnNo,
         amount: paymentData.amount,
@@ -204,6 +205,7 @@ export const intializePaymentForNeat = async (req, res) => {
     });
 
     const result = await response.json();
+
 
     if (result.responseCode === "R1000") {
       // ✅ Send payment success email
@@ -386,16 +388,17 @@ export const checkStatus = async (req, res) => {
 
     console.log("Transaction status result:", result);
 
-    const paymentData = localDataBase.find(
-      (item) => item.merchantTxnNo === merchantTxnNo
+    const paymentData = await Transaction.findOne(
+      { merchantTxnNo: merchantTxnNo }
     );
-    if (result.responseCode != "R1000") {
+    console.log({ paymentData })
+    if (result.responseCode == "000") {
       await sendPaymentSuccessEmail({
-        merchantTxnNo: paymentData.merchantTxnNo,
-        amount: paymentData.amount,
-        customerEmailID: paymentData.customerEmailID,
-        cart: paymentData.cart,
-        addressDetail: paymentData.addressDetail,
+        merchantTxnNo: paymentData?.merchantTxnNo,
+        amount: paymentData?.amount,
+        customerEmailID: paymentData?.customerEmailID,
+        cart: paymentData?.cart,
+        addressDetail: paymentData?.addressDetail,
       });
       // await sendPaymentSuccessEmailToCustomer({
       //   merchantTxnNo: paymentData.merchantTxnNo,
@@ -410,7 +413,7 @@ export const checkStatus = async (req, res) => {
     return res.json({
       success: true,
       data: result,
-      responseCode: result?.responseCode || "000",
+      responseCode: result?.responseCode,
     });
   } catch (error) {
     console.error("Transaction status check error:", error);
