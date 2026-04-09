@@ -6,6 +6,7 @@ const TransactionSchema = new mongoose.Schema(
     customerEmailID: { type: String, required: true },
     cart: { type: mongoose.Schema.Types.Mixed, required: true },
     addressDetail: { type: mongoose.Schema.Types.Mixed, required: true },
+    status: { type: String, enum: ["pending", "success", "failed"], default: "pending" },
   },
   {
     timestamps: true,

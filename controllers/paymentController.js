@@ -389,10 +389,10 @@ export const checkStatus = async (req, res) => {
     console.log("Transaction status result:", result);
 
     const paymentData = await Transaction.findOne(
-      { merchantTxnNo: merchantTxnNo }
+      { merchantTxnNo: merchantTxnNo, status: "pending" }
     );
     console.log({ paymentData })
-    if (result.responseCode == "000") {
+    if (result.responseCode == "000" && paymentData) {
       await sendPaymentSuccessEmail({
         merchantTxnNo: paymentData?.merchantTxnNo,
         amount: paymentData?.amount,
@@ -400,6 +400,11 @@ export const checkStatus = async (req, res) => {
         cart: paymentData?.cart,
         addressDetail: paymentData?.addressDetail,
       });
+      await Transaction.findByIdAndUpdate(
+        paymentData?._id,
+        { status: "success" },
+        { new: true }
+      );
       // await sendPaymentSuccessEmailToCustomer({
       //   merchantTxnNo: paymentData.merchantTxnNo,
       //   amount: paymentData.amount,
