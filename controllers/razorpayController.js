@@ -11,8 +11,8 @@ export async function createOrder(req, res) {
     const { amount, currency } = req.body;
 
     const razorpay = new Razorpay({
-      key_id: "rzp_live_Si2HUWIJF3jxsA",
-      key_secret: "u6v27uSC8Gof8O8tEFfKKGHI",
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
     const options = {
@@ -46,7 +46,7 @@ export async function verifyOrder(req, res) {
   } = req.body;
 
   const generated_signature = crypto
-    .createHmac("sha256", "u6v27uSC8Gof8O8tEFfKKGHI")
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
     .update(razorpay_order_id + "|" + razorpay_payment_id)
     .digest("hex");
 
