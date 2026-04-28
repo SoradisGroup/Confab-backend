@@ -23,7 +23,7 @@ import {
 //   returnURL: "https://confab360degree.com/shipping", // Your Next.js callback page
 // };
 
-let localDataBase = []
+let localDataBase = [];
 export const intializePayment = async (req, res) => {
   try {
     const {
@@ -64,11 +64,13 @@ export const intializePayment = async (req, res) => {
       customerEmailID: customerEmailID,
       transactionType: "SALE",
       txnDate: generateTxnDate(),
-      returnURL: "https://api.confab360degree.com/api/payment/icici-return?merchantTxnNo=" + merchantTxnNo,
+      returnURL:
+        "https://api.confab360degree.com/api/payment/icici-return?merchantTxnNo=" +
+        merchantTxnNo,
       customerMobileNo: customerMobileNo,
     };
 
-    console.log({ paymentData })
+    console.log({ paymentData });
 
     // Only add addlParams if they have actual values
     if (addlParam1) paymentData.addlParam1 = addlParam1;
@@ -115,7 +117,7 @@ export const intializePayment = async (req, res) => {
         customerEmailID: paymentData.customerEmailID,
         cart,
         addressDetail,
-      })
+      });
 
       // await createTransaction.save();
       return res.json({
@@ -158,7 +160,7 @@ export const intializePaymentForNeat = async (req, res) => {
       studentid,
     } = req.body;
 
-    const { merchantId, baseURL, } = getICICIConfig();
+    const { merchantId, baseURL } = getICICIConfig();
 
     // Validate required fields
     if (!amount || !customerEmailID || !customerMobileNo || !merchantTxnNo) {
@@ -172,7 +174,8 @@ export const intializePaymentForNeat = async (req, res) => {
     if (!courseid || !studentid || !sessionid) {
       return res.status(400).json({
         success: false,
-        message: "Missing required NEAT portal fields (courseid, studentid, sessionid)",
+        message:
+          "Missing required NEAT portal fields (courseid, studentid, sessionid)",
       });
     }
 
@@ -206,7 +209,6 @@ export const intializePaymentForNeat = async (req, res) => {
 
     const result = await response.json();
 
-
     if (result.responseCode === "R1000") {
       // ✅ Send payment success email
       await sendPaymentSuccessEmail({
@@ -215,10 +217,12 @@ export const intializePaymentForNeat = async (req, res) => {
         customerEmailID: paymentData.customerEmailID,
         cart,
         addressDetail,
+        currency,
       });
 
       // ✅ Notify NEAT portal of successful payment
-      const NEAT_VERIFICATION_URL = "https://neat.aicte-india.org/payment-verification";
+      const NEAT_VERIFICATION_URL =
+        "https://neat.aicte-india.org/payment-verification";
       const neatParams = new URLSearchParams({
         studentid: studentid,
         Success: "1",
@@ -231,7 +235,9 @@ export const intializePaymentForNeat = async (req, res) => {
         method: "GET",
       });
 
-      console.log(`NEAT notified: ${NEAT_VERIFICATION_URL}?${neatParams.toString()}`);
+      console.log(
+        `NEAT notified: ${NEAT_VERIFICATION_URL}?${neatParams.toString()}`,
+      );
 
       return res.json({
         success: true,
@@ -245,7 +251,8 @@ export const intializePaymentForNeat = async (req, res) => {
       });
     } else {
       // ❌ Notify NEAT portal of failed payment
-      const NEAT_VERIFICATION_URL = "https://neat.aicte-india.org/payment-verification";
+      const NEAT_VERIFICATION_URL =
+        "https://neat.aicte-india.org/payment-verification";
       const neatFailParams = new URLSearchParams({
         studentid: studentid,
         Failure: "1",
@@ -258,7 +265,9 @@ export const intializePaymentForNeat = async (req, res) => {
         method: "GET",
       });
 
-      console.log(`NEAT notified of failure: ${NEAT_VERIFICATION_URL}?${neatFailParams.toString()}`);
+      console.log(
+        `NEAT notified of failure: ${NEAT_VERIFICATION_URL}?${neatFailParams.toString()}`,
+      );
 
       return res.status(400).json({
         success: false,
@@ -276,14 +285,9 @@ export const intializePaymentForNeat = async (req, res) => {
   }
 };
 
-
 export const iciciReturnHandler = async (req, res) => {
   try {
-    const {
-      responseCode,
-      addlParam1,
-      addlParam2,
-    } = req.body;
+    const { responseCode, addlParam1, addlParam2 } = req.body;
 
     const studentid = addlParam1;
     const [courseid, sessionid] = (addlParam2 || "").split("|");
@@ -330,22 +334,22 @@ export const HandlePaymentCallback = (req, res) => {
     ) {
       // Payment successful - redirect to frontend success page
       res.redirect(
-        `http://192.168.1.7:3000/payment-callback?status=success&txnId=${callbackData.txnID}&merchantTxnNo=${callbackData.merchantTxnNo}&amount=${callbackData.amount}`
+        `http://192.168.1.7:3000/payment-callback?status=success&txnId=${callbackData.txnID}&merchantTxnNo=${callbackData.merchantTxnNo}&amount=${callbackData.amount}`,
       );
     } else {
       // Payment failed - redirect to frontend failure page
       res.redirect(
         `http://192.168.1.7:3000/payment-callback?status=failed&error=${encodeURIComponent(
-          callbackData.respDescription || "Payment failed"
-        )}&merchantTxnNo=${callbackData.merchantTxnNo}`
+          callbackData.respDescription || "Payment failed",
+        )}&merchantTxnNo=${callbackData.merchantTxnNo}`,
       );
     }
   } catch (error) {
     console.error("Payment callback error:", error);
     res.redirect(
       `http://192.168.1.7:3000/payment-callback?status=error&error=${encodeURIComponent(
-        "Internal server error"
-      )}`
+        "Internal server error",
+      )}`,
     );
   }
 };
@@ -388,10 +392,11 @@ export const checkStatus = async (req, res) => {
 
     console.log("Transaction status result:", result);
 
-    const paymentData = await Transaction.findOne(
-      { merchantTxnNo: merchantTxnNo, status: "pending" }
-    );
-    console.log({ paymentData })
+    const paymentData = await Transaction.findOne({
+      merchantTxnNo: merchantTxnNo,
+      status: "pending",
+    });
+    console.log({ paymentData });
     if (result.responseCode == "000" && paymentData) {
       await sendPaymentSuccessEmail({
         merchantTxnNo: paymentData?.merchantTxnNo,
@@ -403,7 +408,7 @@ export const checkStatus = async (req, res) => {
       await Transaction.findByIdAndUpdate(
         paymentData?._id,
         { status: "success" },
-        { new: true }
+        { new: true },
       );
       // await sendPaymentSuccessEmailToCustomer({
       //   merchantTxnNo: paymentData.merchantTxnNo,
@@ -427,192 +432,3 @@ export const checkStatus = async (req, res) => {
     });
   }
 };
-
-//
-
-// // import fetch from "node-fetch"; // or global fetch in Node 18+
-// import {
-//   generateSecureHash,
-//   generateTxnDate,
-//   sendPaymentSuccessEmail,
-//   getICICIConfig, // <-- new
-// } from "../Utils/paymentFunctions.js";
-
-// // ---------------------------
-// // Initialize Payment
-// // ---------------------------
-// export const intializePayment = async (req, res) => {
-//   try {
-//     const config = getICICIConfig(); // read env at runtime
-
-//     const {
-//       amount,
-//       customerEmailID,
-//       customerMobileNo,
-//       merchantTxnNo,
-//       addlParam1 = "",
-//       addlParam2 = "",
-//       cart,
-//       addressDetail,
-//       currency = "INR",
-//     } = req.body;
-
-//     // Validate required fields
-//     if (!amount || !customerEmailID || !customerMobileNo || !merchantTxnNo) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Missing required fields",
-//       });
-//     }
-
-//     // Prepare payment payload (fields required for ICICI)
-//     const paymentData = {
-//     merchantId: config.merchantId,
-//     merchantTxnNo,
-//     amount: parseFloat(amount).toFixed(2),
-//     currencyCode: currency === "INR" ? "356" : "978",
-//     transactionType: "SALE",
-//     txnDate: generateTxnDate(),
-//     returnURL: config.returnURL,
-//     customerEmailID,
-//     customerMobileNo,
-//     addlParam1: addlParam1 ?? "",
-//     addlParam2: addlParam2 ?? "",
-//     payType: "0", // include in payload, but NOT in hash
-//     };
-
-//     // Generate secure hash for ICICI
-//     paymentData.secureHash = generateSecureHash(paymentData);
-
-// //     console.log("=== HASH DEBUG ===");
-// // console.log("Payment data for hash:", {
-// //   ...paymentData,
-// //   secureHash: undefined // exclude from log
-// // });
-// // console.log("Generated hash:", paymentData.secureHash);
-// // console.log("Merchant secret key (first 5 chars):", config.merchantSecretKey.substring(0, 5));
-
-//     const requestURL = `${config.baseURL}/initiateSale`;
-//     // console.log("Payment request URL:", requestURL);
-//     // console.log("Payment payload:", paymentData);
-
-//     // Call ICICI API
-//     const response = await fetch(requestURL, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify(paymentData),
-//     });
-
-//     const result = await response.json();
-//     console.log("ICICI response:", result);
-
-//     if (result.responseCode === "R1000") {
-//       // Send payment success email (cart & address only for email)
-//       await sendPaymentSuccessEmail({
-//         merchantTxnNo: paymentData.merchantTxnNo,
-//         amount: paymentData.amount,
-//         customerEmailID: paymentData.customerEmailID,
-//         cart,
-//         addressDetail,
-//       });
-
-//       return res.json({
-//         success: true,
-//         data: {
-//           redirectURI: result.redirectURI,
-//           tranCtx: result.tranCtx,
-//           merchantTxnNo,
-//         },
-//       });
-//     } else {
-//       return res.status(400).json({
-//         success: false,
-//         message: result.responseDescription || "Payment initiation failed",
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Payment initiation error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//     });
-//   }
-// };
-
-// // ---------------------------
-// // Handle Payment Callback
-// // ---------------------------
-// export const HandlePaymentCallback = (req, res) => {
-//   try {
-//     const config = getICICIConfig(); // runtime config
-//     const callbackData = req.body;
-
-//     const receivedHash = callbackData.secureHash;
-//     delete callbackData.secureHash;
-//     const calculatedHash = generateSecureHash(callbackData);
-
-//     if (receivedHash !== calculatedHash) {
-//       return res.status(400).json({ success: false, message: "Invalid secure hash" });
-//     }
-
-//     const frontendBase = "https://confab360degree.com";
-
-//     if (["000", "0000"].includes(callbackData.responseCode)) {
-//       res.redirect(
-//         `${frontendBase}/payment-callback?status=success&txnId=${callbackData.txnID}&merchantTxnNo=${callbackData.merchantTxnNo}&amount=${callbackData.amount}`
-//       );
-//     } else {
-//       res.redirect(
-//         `${frontendBase}/payment-callback?status=failed&error=${encodeURIComponent(
-//           callbackData.respDescription || "Payment failed"
-//         )}&merchantTxnNo=${callbackData.merchantTxnNo}`
-//       );
-//     }
-//   } catch (error) {
-//     console.error("Payment callback error:", error);
-//     res.redirect(
-//       `https://confab360degree.com/payment-callback?status=error&error=${encodeURIComponent(
-//         "Internal server error"
-//       )}`
-//     );
-//   }
-// };
-
-// // ---------------------------
-// // Check Transaction Status
-// // ---------------------------
-// export const checkStatus = async (req, res) => {
-//   try {
-//     const config = getICICIConfig(); // runtime config
-//     const { merchantTxnNo } = req.body;
-
-//     if (!merchantTxnNo) {
-//       return res.status(400).json({ success: false, message: "merchantTxnNo is required" });
-//     }
-
-//     const statusData = {
-//       merchantID: config.merchantId,
-//       merchantTxnNo,
-//       originalTxnNo: merchantTxnNo,
-//       transactionType: "STATUS",
-//     };
-
-//     statusData.secureHash = generateSecureHash(statusData);
-
-//     const formData = new URLSearchParams(statusData);
-//     const COMMAND_API = (config.baseURL || "").replace("/v2", "") + "/command";
-
-//     const response = await fetch(COMMAND_API, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-//       body: formData,
-//     });
-
-//     const result = await response.json();
-
-//     return res.json({ success: true, data: result });
-//   } catch (error) {
-//     console.error("Transaction status check error:", error);
-//     return res.status(500).json({ success: false, message: "Internal server error" });
-//   }
-// };

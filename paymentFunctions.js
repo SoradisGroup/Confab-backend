@@ -19,14 +19,15 @@ export function generateSecureHash(data) {
 
   // Step 1: Filter out null/undefined/empty, then sort keys alphabetically
   const hashString = Object.keys(data)
-    .filter(key =>
-      data[key] !== null &&
-      data[key] !== undefined &&
-      data[key] !== "" &&
-      key !== "secureHash" // exclude secureHash itself if present
+    .filter(
+      (key) =>
+        data[key] !== null &&
+        data[key] !== undefined &&
+        data[key] !== "" &&
+        key !== "secureHash", // exclude secureHash itself if present
     )
     .sort() // sort AFTER filtering
-    .map(key => data[key])
+    .map((key) => data[key])
     .join("");
 
   console.log("=== HASH DEBUG ===");
@@ -57,6 +58,7 @@ export async function sendPaymentSuccessEmail({
   customerEmailID,
   cart,
   addressDetail,
+  currency,
 }) {
   try {
     let cartItems = [];
@@ -79,19 +81,18 @@ export async function sendPaymentSuccessEmail({
             <th>Price</th>
           </tr>
           ${cartItems
-          .map(
-            (item) => `
+            .map(
+              (item) => `
               <tr>
                 <td>${item.name}</td>
                 <td>${item.selectedDuration?.name || "-"}</td>
-                <td>${item.selectedDuration?.price ||
-              item.purchaseAtPrice ||
-              0
-              } INR</td>
+                <td>${
+                  item.selectedDuration?.price || item.purchaseAtPrice || 0
+                } INR</td>
               </tr>
-            `
-          )
-          .join("")}
+            `,
+            )
+            .join("")}
         </table>
       `
         : "";
@@ -195,19 +196,18 @@ export async function sendPaymentSuccessEmailToCustomer({
             <th>Price</th>
           </tr>
           ${cartItems
-          .map(
-            (item) => `
+            .map(
+              (item) => `
               <tr>
                 <td>${item.name}</td>
                 <td>${item.selectedDuration?.name || "-"}</td>
-                <td>${item.selectedDuration?.price ||
-              item.purchaseAtPrice ||
-              0
-              } INR</td>
+                <td>${
+                  item.selectedDuration?.price || item.purchaseAtPrice || 0
+                } ${currency}</td>
               </tr>
-            `
-          )
-          .join("")}
+            `,
+            )
+            .join("")}
         </table>
       `
         : "";
@@ -282,12 +282,6 @@ export async function sendPaymentSuccessEmailToCustomer({
     return false;
   }
 }
-
-
-
-
-
-
 
 // import crypto from "crypto";
 // import nodemailer from "nodemailer";

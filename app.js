@@ -7,6 +7,7 @@ import contactRoute from "./routes/contactRoute.js";
 import { sendPaymentSuccessEmail } from "./paymentFunctions.js";
 import { Transaction } from "./model/Transaction.js";
 import mongoose from "mongoose";
+import { createOrder, verifyOrder } from "./controllers/razorpayController.js";
 
 dotenv.config({
   path: "./.env",
@@ -48,6 +49,8 @@ mongoose
 app.use("/api/payment", paymentRoute);
 app.use("/api/career", careerRoute);
 app.use("/api/contact", contactRoute);
+app.post("/api/payment/create-order", createOrder);
+app.post("/api/payment/verify", verifyOrder);
 app.post("/api/payment/icici-return", async (req, res) => {
   console.log("Payment Response From ICICI:", req.body);
 
@@ -67,7 +70,10 @@ app.post("/api/payment/icici-return", async (req, res) => {
 
   // Redirect user back to service list page
   const merchantTxnNo = req.query.merchantTxnNo ?? "";
-  res.redirect("https://www.confab360degree.com/shipping/success?merchantTxnNo=" + merchantTxnNo);
+  res.redirect(
+    "https://www.confab360degree.com/shipping/success?merchantTxnNo=" +
+      merchantTxnNo,
+  );
 });
 
 // server
